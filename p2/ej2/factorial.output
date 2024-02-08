@@ -1,0 +1,28 @@
+[vm]
+from: 0x5B3...eddC4
+to: Factorial.(constructor)
+value: 0 wei
+data: 0x608...80033
+logs: 0
+hash: 0xedc...08a2e
+
+call to Factorial.factorial
+
+call
+[call]
+from: 0x5B38Da6a701c568545dCfcB03FcB875f56beddC4
+to: Factorial.factorial(uint256)
+data: 0x837...00032
+from	0x5B38Da6a701c568545dCfcB03FcB875f56beddC4
+to	Factorial.factorial(uint256) 0x7EF2e0048f5bAeDe046f6BF797943daF4ED8CB47
+execution cost	21970 gas (Cost only applies when called by a contract)
+input	0x837...00032
+decoded input	{
+	"uint256 n": "50"
+}
+decoded output	{
+	"0": "uint256: 30414093201713378043612608166064768844377641568960512000000000000"
+}
+logs	[]
+
+call to Factorial.factorial
