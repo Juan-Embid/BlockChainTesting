@@ -1,0 +1,99 @@
+1. DEPOSIT 3ETH
+
+[vm]
+from: 0x5B3...eddC4
+to: PiggyBank.deposit() 0xDA0...42B53
+value: 3000000000000000000 wei
+data: 0xd0e...30db0
+logs: 0
+hash: 0xff4...c5401
+status	0x1 Transaction mined and execution succeed
+transaction hash	0xff4f105ed6cab4cdb6719a88e7397194df947533c8cba6d48ad0b07419ac5401
+block hash	0x0ca07658fb3500ed72ce0f04efd572d74769e60e290eef28eaf1bdb3d0854ba9
+block number	9
+from	0x5B38Da6a701c568545dCfcB03FcB875f56beddC4
+to	PiggyBank.deposit() 0xDA0bab807633f07f013f94DD0E6A4F96F8742B53
+gas	50093 gas
+transaction cost	43559 gas 
+execution cost	22495 gas 
+input	0xd0e...30db0
+decoded input	{}
+decoded output	{}
+logs	[]
+value	3000000000000000000 wei
+
+
+
+2. WITHDRAW
+
+transact to PiggyBank.withdraw errored: Error encoding arguments: Error: invalid BigNumber string (argument="value", value="", code=INVALID_ARGUMENT, version=bignumber/5.7.0)
+
+transact to PiggyBank.withdraw pending ... 
+
+transact to PiggyBank.withdraw errored: Error occured: revert.
+
+revert
+	The transaction has been reverted to the initial state.
+Reason provided by the contract: "You are not the owner".
+Debug the transaction to get more information.
+
+[vm]
+from: 0x4B2...C02db
+to: PiggyBank.withdraw(uint256) 0xDA0...42B53
+value: 0 wei
+data: 0x2e1...40000
+logs: 0
+hash: 0x408...ad6f4
+status	0x0 Transaction mined but execution failed
+transaction hash	0x40806ed610640ce9afbcab3447f44fa9c00b6ce3df94888d253c9be0d7bad6f4
+block hash	0xdd3697f97bab2032410d4802c25b205b90fcd278d6f27c9686095e3732218d67
+block number	11
+from	0x4B20993Bc481177ec7E8f571ceCaE8A9e22C02db
+to	PiggyBank.withdraw(uint256) 0xDA0bab807633f07f013f94DD0E6A4F96F8742B53
+gas	3000000 gas
+transaction cost	24116 gas 
+execution cost	2852 gas 
+input	0x2e1...40000
+decoded input	{
+	"uint256 amountInWei": "5000000000000000000"
+}
+decoded output	{}
+logs	[]
+
+
+
+3. GET BALANCE
+
+transact to PiggyBank.withdraw pending ... 
+
+transact to PiggyBank.withdraw errored: Error occured: revert.
+
+revert
+	The transaction has been reverted to the initial state.
+Reason provided by the contract: "You are not the owner".
+Debug the transaction to get more information.
+
+[vm]
+from: 0x787...cabaB
+to: PiggyBank.withdraw(uint256) 0xDA0...42B53
+value: 0 wei
+data: 0x2e1...51000
+logs: 0
+hash: 0xf7d...09981
+
+call to PiggyBank.getBalance
+
+call
+[call]
+from: 0x78731D3Ca6b7E34aC0F824c42a7cC18A495cabaB
+to: PiggyBank.getBalance()
+data: 0x120...65fe0
+from	0x78731D3Ca6b7E34aC0F824c42a7cC18A495cabaB
+to	PiggyBank.getBalance() 0xDA0bab807633f07f013f94DD0E6A4F96F8742B53
+execution cost	2410 gas (Cost only applies when called by a contract)
+input	0x120...65fe0
+decoded input	{}
+decoded output	{
+	"0": "uint256: 8000000000000000000"
+}
+logs	[]
