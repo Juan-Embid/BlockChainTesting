@@ -9,10 +9,10 @@ interface ERC721simplified {
   event Approval(address indexed _owner, address indexed _approved, uint256 indexed _tokenId);
 
   // APPROVAL FUNCTIONS
-  function approve(address _approved, uint256 _tokenId) external payable;
+  function approve(address _approved, uint256 _tokenId) external;
 
   // TRANSFER FUNCTION
-  function transferFrom(address _from, address _to, uint256 _tokenId) external payable;
+  function transferFrom(address _from, address _to, uint256 _tokenId) external;
 
   // VIEW FUNCTIONS (GETTERS)
   function balanceOf(address _owner) external view returns (uint256);
@@ -73,16 +73,14 @@ contract MonsterTokens is ERC721simplified {
     }
 
     // Implemented functions
-    function approve(address _approved, uint256 _tokenId) external payable {
+    function approve(address _approved, uint256 _tokenId) external override {
         require(msg.sender == characters[_tokenId].owner, "Only owner can approve");
-        require(msg.value >= characters[_tokenId].weapons.firePowers.sum(), "Insufficient value sent");
         characters[_tokenId].approved = _approved;
         emit Approval(msg.sender, _approved, _tokenId);
     }
 
-    function transferFrom(address _from, address _to, uint256 _tokenId) external payable {
+    function transferFrom(address _from, address _to, uint256 _tokenId) external override {
         require(msg.sender == characters[_tokenId].owner || msg.sender == characters[_tokenId].approved, "Only owner or approved can transfer");
-        require(msg.value >= characters[_tokenId].weapons.firePowers.sum(), "Insufficient value sent");
         require(_from == characters[_tokenId].owner, "Incorrect owner");
         
         characters[_tokenId].owner = _to;
@@ -93,16 +91,16 @@ contract MonsterTokens is ERC721simplified {
         emit Transfer(_from, _to, _tokenId);
     }
 
-    function balanceOf(address _owner) external view returns (uint256) {
+    function balanceOf(address _owner) external view override returns (uint256) {
         return balances[_owner];
     }
 
-    function ownerOf(uint256 _tokenId) external view returns (address) {
+    function ownerOf(uint256 _tokenId) external view override returns (address) {
         require(characters[_tokenId].owner != address(0), "Token does not exist");
         return characters[_tokenId].owner;
     }
 
-    function getApproved(uint256 _tokenId) external view returns (address) {
+    function getApproved(uint256 _tokenId) external view override returns (address) {
         require(characters[_tokenId].owner != address(0), "Token does not exist");
         return characters[_tokenId].approved;
     }
