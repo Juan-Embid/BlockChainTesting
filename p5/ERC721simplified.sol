@@ -8,13 +8,13 @@ interface ERC721simplified {
   event Transfer(address indexed _from, address indexed _to, uint256 indexed _tokenId);
   event Approval(address indexed _owner, address indexed _approved, uint256 indexed _tokenId);
 
-  // APPROVAL FUNCTIONS
+  // APPROVAL 
   function approve(address _approved, uint256 _tokenId) external;
 
-  // TRANSFER FUNCTION
+  // TRANSFER 
   function transferFrom(address _from, address _to, uint256 _tokenId) external;
 
-  // VIEW FUNCTIONS (GETTERS)
+  // VIEW 
   function balanceOf(address _owner) external view returns (uint256);
   function ownerOf(uint256 _tokenId) external view returns (address);
   function getApproved(uint256 _tokenId) external view returns (address);

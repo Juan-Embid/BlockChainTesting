@@ -1,8 +1,8 @@
-    * Yul allows for more direct interaction with storage.
-    
-    * By using Yul, we can optimize loops and conditional checks reducing the number of expensive storage reads and writes.
-    
-    * Yul provides the flexibility to implement memory management techniques and inline assembly optimizations.
 
 Solidity Implementation: 84,723 gas
 Yul Implementation: 44,967 gas
+
+
+
+Al usar Yul, se puede optimizar bucles y verificaciones condicionales, reduciendo el número de lecturas y escrituras de almacenamiento de mucho coste.
+Yul proporciona la flexibilidad para implementar técnicas de gestión de memoria y optimizaciones de ensamblaje en línea.
