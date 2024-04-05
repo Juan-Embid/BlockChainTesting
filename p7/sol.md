@@ -1,6 +1,6 @@
 
-Solidity Implementation: 84,723 gas
-Yul Implementation: 44,967 gas
+Solidity Implementation: 144273 gas
+Yul Implementation:  76371 gas
 
 
 
