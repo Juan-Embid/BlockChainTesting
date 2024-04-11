@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 library ArrayUtils {
-    // Check if a string is contained in an array of strings
+    // String contenido en array    
     function contains(string[] memory array, string memory val) internal pure returns (bool) {
         for (uint i = 0; i < array.length; i++) {
             if (keccak256(bytes(array[i])) == keccak256(bytes(val))) {
@@ -12,14 +12,14 @@ library ArrayUtils {
         return false;
     }
 
-    // Increment each element of a uint array by a percentage
+    // Aumentar enporcentaje los elementos de un array de uint
     function increment(uint[] storage array, uint8 percentage) internal {
         for (uint i = 0; i < array.length; i++) {
             array[i] = array[i] + (array[i] * percentage / 100);
         }
     }
-
-    // Sum the elements of a uint array
+ 
+    // Sumar elements
     function sum(uint[] memory array) internal pure returns (uint) {
         uint sumN = 0;
         for (uint i = 0; i < array.length; i++) {
