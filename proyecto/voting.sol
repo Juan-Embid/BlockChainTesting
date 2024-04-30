@@ -2,12 +2,14 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IExecutableProposal { // interfaz que implementa el contrato
     function executeProposal(uint proposalId, uint numVotes, uint numTokens) external payable; // external para que solo pueda ser llamado desde fuera del contrato, payable para que pueda recibir ether
 }
 
-contract QuadraticVoting {
+contract QuadraticVoting is ERC20, Ownable { // zepellin para el token y para el owner ERC20Burnable
     ERC20 public votingToken;
     address public owner;
     bool public votingOpen = false;
@@ -17,6 +19,9 @@ contract QuadraticVoting {
     mapping(uint256 => Proposal) public proposals; // mapeo de id de propuesta a propuesta
     uint256 public proposalCount; // contador de propuestas
 
+    event ProposalExecutionSucceeded(uint256 proposalId);
+    event ProposalExecutionFailed(uint256 proposalId);
+
     struct Proposal {
         string title;
         string description;
@@ -25,6 +30,7 @@ contract QuadraticVoting {
         bool approved;
         mapping(address => uint256) votesByParticipant; // votos de cada participante
         address[] voters; // votantes
+        bool executed; // default false
     }
 
     //Inicializacion del contrato
@@ -33,6 +39,14 @@ contract QuadraticVoting {
         votingToken = new ERC20("CarlosJuanToken", "CJT");
     }
 
+    function mint(address to, uint256 amount) public onlyOwner {
+        _mint(to, amount);
+    }
+
+    function burn(address from, uint256 amount) public onlyOwner {
+        _burn(from, amount);
+    }
+    
     modifier onlyOwner() {
       require(msg.sender == owner, "Only owner can perform this action");
       _;
@@ -69,7 +83,8 @@ contract QuadraticVoting {
           executor: _executor,
           approved: false,
           votesByParticipant: new mapping(address => uint256)(),
-          voters: new address[](0)
+          voters: new address[](0),
+          executed: false
       });
       return proposalCount++;
     }
@@ -182,47 +197,71 @@ contract QuadraticVoting {
         votingToken.transfer(msg.sender, tokenWithdrawMoney);
     }
 
-    // TODO: Revisar
     function _checkAndExecuteProposal(uint256 proposalId) internal {
         Proposal storage proposal = proposals[proposalId];
-        uint256 totalVotes = 0;
-        for (uint256 i = 0; i < proposal.voters.length; i++) {
-            totalVotes += proposal.votesByParticipant[proposal.voters[i]];
-        }
 
-        // Example threshold calculation (needs proper implementation based on actual requirements)
-        if (totalVotes >= threshold) {
-            proposal.approved = true;
-            IExecutableProposal(proposal.executor).executeProposal(proposalId, totalVotes, proposal.budget);
-            // Adjust budget if necessary, handle token accounting, etc.
-        }
-    }
+        if (!proposal.approved && !proposal.executed && proposal.budget > 0) { // comprobamos que no es signaling
 
-    // TODO: Revisar
-    function closeVoting() external onlyOwner {
-        require(votingOpen, "Voting is already closed");
-        votingOpen = false;
+            uint256 budget = proposal.budget;
+            require(address(this).balance >= budget, "Insufficient funds for execution"); // comprobamos si hay suficiente presupuesto para ejecutar la propuesta
 
-        // Handle each proposal
-        for (uint256 i = 0; i < proposalCount; i++) {
-            Proposal storage proposal = proposals[i];
-            if (!proposal.approved) {
-                // Return tokens to voters
-                for (uint256 j = 0; j < proposal.voters.length; j++) {
-                    address voter = proposal.voters[j];
-                    uint256 votes = proposal.votesByParticipant[voter];
-                    uint256 tokensToReturn = calculateVoteCost(0, votes);
-                    votingToken.transfer(voter, tokensToReturn);
-                    proposal.votesByParticipant[voter] = 0;
-                }
-            } else {
-                // Ensure execution of approved proposals
-                if (!proposal.executed) {
-                    _checkAndExecuteProposal(i);
-                }
+            uint256 totalVotes = 0;
+            for (uint256 i = 0; i < proposal.voters.length; i++) {
+                address voter = proposal.voters[i];
+                uint256 votes = proposal.votesByParticipant[voter];
+                uint256 tokensToConsume = votes * votes;
+                votingToken.burn(voter, tokensToConsume); // burn de los tokens stakeados
+                totalVotes += votes;
+            }
+
+            totalBudget -= budget; // total budget se reduce en el presupuesto de la propuesta
+
+            try IExecutableProposal(proposal.executor).executeProposal{value: budget, gas: 100000}(proposalId, totalVotes, budget) {
+                proposal.approved = true;
+                proposal.executed = true;
+                emit ProposalExecutionSucceeded(proposalId);
+            } catch {
+                emit ProposalExecutionFailed(proposalId);
             }
         }
     }
 
+    function closeVoting() external onlyOwner { // se tienen que ejecutar todas las propuestas signaling
+        require(votingOpen, "Voting is already closed");
+        votingOpen = false;
+
+        // Procesar cada propuesta al cerrar la votación
+        for (uint256 i = 0; i < proposalCount; i++) {
+            Proposal storage proposal = proposals[i];
+            if (!proposal.approved ) {
+                // Devolver tokens a los votantes de propuestas no aprobadas
+                for (uint256 j = 0; j < proposal.voters.length; j++) {
+                    address voter = proposal.voters[j];
+                    uint256 votes = proposal.votesByParticipant[voter];
+                    uint256 tokensToReturn = votes * votes; // Devolución cuadrática
+                    votingToken.transfer(voter, tokensToReturn);
+                    proposal.votesByParticipant[voter] = 0;
+                }
+
+            } else {
+                // Asegurarse de que las propuestas aprobadas se ejecuten
+                if (!proposal.executed) {
+                    _checkAndExecuteProposal(i);
+                }
+            }
+
+            // Limpiar datos de votantes para liberar espacio en storage y evitar reentrancy issues
+            delete proposal.voters;
+        }
+
+        // Transferir el presupuesto no gastado al propietario del contrato
+        payable(owner).transfer(totalBudget);
+        totalBudget = 0;
+
+        // uint256 remainingBudget = address(this).balance;
+        // if (remainingBudget > 0) {
+        //     payable(owner).transfer(remainingBudget);
+        // }
+    }
 
 }
