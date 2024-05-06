@@ -47,6 +47,10 @@ contract QuadraticVoting is ERC20, Ownable { // zepellin para el token y para el
     }
 
     // CHECKS AND GETS
+    function getERC20() external view returns (address) {
+        return address(votingToken);
+    }
+
     function getVotingToken() external view returns (address) {
         return address(votingToken);
     }
@@ -153,10 +157,6 @@ contract QuadraticVoting is ERC20, Ownable { // zepellin para el token y para el
       votingToken.burn(msg.sender, tokenAmount); // eliminamos tokens
       payable(msg.sender).transfer(etherToReturn);
     }
-
-    // function getERC20() external view returns (address) {
-    //     return address(votingToken);
-    // }
 
     function getPendingProposals() external view returns (uint256[] memory) {
       require(votingOpen, "Voting process is not open");
