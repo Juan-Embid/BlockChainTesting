@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+// import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IExecutableProposal { // interfaz que implementa el contrato
@@ -14,7 +14,7 @@ contract QuadraticVoting is ERC20, Ownable { // zepellin para el token y para el
     address public owner;
     bool public votingOpen = false;
     uint256 public totalBudget; // será modificado cuando el contrato se apruebe
-
+    uint256 public tokenPrice;
     mapping(address => bool) public registeredParticipants; // a true si el participante está registrado
     mapping(uint256 => Proposal) public proposals; // mapeo de id de propuesta a propuesta
     uint256 public proposalCount; // contador de propuestas
@@ -27,18 +27,55 @@ contract QuadraticVoting is ERC20, Ownable { // zepellin para el token y para el
         string description;
         uint256 budget;
         address payable executor;
+        uint256 threshold; // umbral de votos
         bool approved;
         mapping(address => uint256) votesByParticipant; // votos de cada participante
         address[] voters; // votantes
         bool executed; // default false
     }
 
-    //Inicializacion del contrato
+    // CONSTRUCTOR
     constructor(uint256 _tokenPrice, uint256 _maxTokens) {
         owner = msg.sender;
-        votingToken = new ERC20("CarlosJuanToken", "CJT");
+        votingToken = new ERC20("CarlosJuanToken", "CJT", _maxTokens);
     }
 
+    // MODIFICADORES
+    modifier onlyOwner() {
+      require(msg.sender == owner, "Only owner can perform this action");
+      _;
+    }
+
+    // CHECKS AND GETS
+    function getVotingToken() external view returns (address) {
+        return address(votingToken);
+    }
+
+    function getProposalBudget(uint proposalId) external view returns (uint) {
+        return proposals[proposalId].budget;
+    }
+
+    function getTotalProposalVotes(uint proposalId) external view returns (uint){
+        uint totalVotes = 0;
+        for (uint i = 0; i < proposals[proposalId].voters.length; i++) {
+            totalVotes += proposals[proposalId].votesByParticipant[proposals[proposalId].voters[i]];
+        }
+        return totalVotes;
+    }
+
+    function checkProposalApproved(uint proposalId) external view returns (bool){
+        return proposals[proposalId].approved;
+    }
+
+    function getTotalBudget() external view returns (uint) {
+        return totalBudget;
+    }
+
+    function getThreshold(uint proposalId) external view returns (uint) {
+        return proposals[proposalId].threshold;
+    }
+
+    // FUNCIONES
     function mint(address to, uint256 amount) public onlyOwner {
         _mint(to, amount);
     }
@@ -47,10 +84,6 @@ contract QuadraticVoting is ERC20, Ownable { // zepellin para el token y para el
         _burn(from, amount);
     }
     
-    modifier onlyOwner() {
-      require(msg.sender == owner, "Only owner can perform this action");
-      _;
-    }
     // Abre voting y solo puede ser ejecutado por el creado del contrato, se le pasa el presupuesto inicial (luego modificado)
     function openVoting(uint256 _initialBudget) external onlyOwner { 
       require(!votingOpen, "Voting is already open");
@@ -121,9 +154,9 @@ contract QuadraticVoting is ERC20, Ownable { // zepellin para el token y para el
       payable(msg.sender).transfer(etherToReturn);
     }
 
-    function getERC20() external view returns (address) {
-        return address(votingToken);
-    }
+    // function getERC20() external view returns (address) {
+    //     return address(votingToken);
+    // }
 
     function getPendingProposals() external view returns (uint256[] memory) {
       require(votingOpen, "Voting process is not open");
@@ -178,10 +211,21 @@ contract QuadraticVoting is ERC20, Ownable { // zepellin para el token y para el
         uint256 costForNewVotes = (newTotalVotes * newTotalVotes) - (currentVotes * currentVotes);
 
         require(votingToken.balanceOf(msg.sender) >= costForNewVotes, "Insufficient tokens for voting"); // comprobamos que tiene suficientes tokens para poder votar
-
+        // Según la práctica: Nevertheless, the threshold of a proposal must only be computed and checked when the proposal receives votes.
+        uint256 nPendingProposals = 0;
+        for (uint256 i = 0; i < proposalCount; i++) {
+            if (!proposals[i].approved && proposals[i].budget > 0) {
+                nPendingProposals++;
+            }
+        }
+        proposal.threshold = ((0.2 + (proposal.budget / totalBudget)) * proposal.voters.length) + nPendingProposals; // umbral de votos
+        
         votingToken.transferFrom(msg.sender, getERC20(), costForNewVotes); // desde el que llama al contrato a este contrato por el valor de costForNewVotes
-
         proposal.votesByParticipant[msg.sender] = newTotalVotes; // actualizamos los votos del participante
+
+        if (newTotalVotes >= proposal.threshold) {
+            _checkAndExecuteProposal();
+        }
     }
 
     function withdrawFromProposal(uint256 proposalId, uint256 numVotes) external {
@@ -198,6 +242,7 @@ contract QuadraticVoting is ERC20, Ownable { // zepellin para el token y para el
     }
 
     function _checkAndExecuteProposal(uint256 proposalId) internal {
+        // THRESHOLD
         Proposal storage proposal = proposals[proposalId];
 
         if (!proposal.approved && !proposal.executed && proposal.budget > 0) { // comprobamos que no es signaling
