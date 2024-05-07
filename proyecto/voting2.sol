@@ -64,10 +64,9 @@ contract QuadraticVoting {
     }
 
     // CONSTRUCTOR
-    constructor(uint256 _tokenPrice, uint256 _maxTokens) {
+    constructor(uint256 _tokenPrice) {
         tokenPrice = _tokenPrice;
         owner = msg.sender;
-        votingToken = new ERC20DAO("CarlosJuanToken", "CJT", _maxTokens);
     }
 
     // MODIFICADORES
