@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.25;
 
-// import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol";
-// import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-// "
-// // import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IExecutableProposal {
@@ -100,14 +96,12 @@ contract QuadraticVoting {
         return proposals[proposalId].budget;
     }
 
-    function getTotalProposalVotes(
-        uint proposalId
-    ) external view returns (uint) {
+    function getTotalProposalVotes(uint proposalId) external view returns (uint) {
+        Proposal storage proposal = proposals[proposalId];
         uint totalVotes = 0;
-        for (uint i = 0; i < proposals[proposalId].voters.length; i++) {
-            totalVotes += proposals[proposalId].votesByParticipant[
-                proposals[proposalId].voters[i]
-            ];
+        address[] storage voters = proposal.voters;
+        for (uint i = 0; i < voters.length; i++) {
+            totalVotes += proposal.votesByParticipant[voters[i]];
         }
         return totalVotes;
     }
@@ -174,14 +168,7 @@ contract QuadraticVoting {
         newProposal.votesByParticipant[msg.sender] = 0;
         newProposal.voters = new address[](0);
         newProposal.executed = false;
-        //   title: _title,
-        //   description: _description,
-        //   budget: _budget, // puede ser 0 si es un signaling proposal
-        //   executor: _executor,
-        //   approved: false,
-        //   votesByParticipant: new mapping(address => uint256)(),
-        //   voters: new address[](0),
-        //   executed: false
+
         return proposalCount++;
     }
 
