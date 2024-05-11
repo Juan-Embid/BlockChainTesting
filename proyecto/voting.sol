@@ -3,6 +3,7 @@ pragma solidity ^0.8.25;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+// import "@openzeppelin/contracts/security/ReentrancyGuard.sol"; // nonReentrant
 
 interface IExecutableProposal {
     // interfaz que implementa el contrato
@@ -133,6 +134,7 @@ contract QuadraticVoting {
             !registeredParticipants[msg.sender],
             "Participant already registered"
         );
+        // AVOIDING UPDATES SOLUTION
         registeredParticipants[msg.sender] = true;
         uint256 tokensToMint = msg.value;
         votingToken.transfer(msg.sender, tokensToMint);
@@ -209,6 +211,7 @@ contract QuadraticVoting {
             "Insufficient token balance"
         );
         uint256 etherToReturn = tokenAmount * tokenPrice;
+        // AVOIDING UPDATES SOLUTION
         votingToken.deleteTokens(msg.sender, tokenAmount); // eliminamos tokens
         payable(msg.sender).transfer(etherToReturn);
     }
@@ -299,10 +302,9 @@ contract QuadraticVoting {
         uint256 weightedBudget = (proposal.budget * scalingFactor) / totalBudget;
         proposal.threshold = ((200 + weightedBudget) * proposal.voters.length) / scalingFactor + nPendingProposals;
 
-        //votingToken.transferFrom(msg.sender, getERC20(), costForNewVotes);
-        votingToken.transferFrom(msg.sender, address(this), costForNewVotes); // desde el que llama al contrato a este contrato por el valor de costForNewVotes
-
+        // AVOIDING UPDATES SOLUTION
         proposal.votesByParticipant[msg.sender] = newTotalVotes; // actualizamos los votos del participante
+        votingToken.transferFrom(msg.sender, address(this), costForNewVotes); // desde el que llama al contrato a este contrato por el valor de costForNewVotes
 
         if (newTotalVotes >= proposal.threshold) {
             _checkAndExecuteProposal(proposalId);
@@ -325,8 +327,10 @@ contract QuadraticVoting {
 
         uint256 tokenWithdrawMoney = (currentVotes * currentVotes) -
             (numVotes * numVotes);
-        proposal.votesByParticipant[msg.sender] = currentVotes - numVotes;
-        votingToken.transfer(msg.sender, tokenWithdrawMoney);
+
+        // AVOIDING UPDATES SOLUTION
+        proposal.votesByParticipant[msg.sender] = currentVotes - numVotes; // actualizamos el estado
+        votingToken.transfer(msg.sender, tokenWithdrawMoney); // llamada externa
     }
 
     function _checkAndExecuteProposal(uint256 proposalId) internal {
@@ -348,10 +352,11 @@ contract QuadraticVoting {
                 uint256 votes = proposal.votesByParticipant[voter];
                 uint256 tokensToConsume = votes * votes;
 
+                // AVOIDING UPDATES SOLUTION
                 votingToken.deleteTokens(voter, tokensToConsume); // burn de los tokens stakeados
                 totalVotes += votes;
             }
-
+            // AVOIDING UPDATES SOLUTION
             totalBudget -= budget; // total budget se reduce en el presupuesto de la propuesta
 
             try
@@ -384,6 +389,7 @@ contract QuadraticVoting {
                     uint256 votes = proposal.votesByParticipant[voter];
                     uint256 tokensToReturn = votes * votes; // Devolución cuadrática
                     votingToken.transfer(voter, tokensToReturn);
+                    // AVOIDING UPDATES SOLUTION
                     proposal.votesByParticipant[voter] = 0; 
                 }
             } else {
@@ -398,12 +404,9 @@ contract QuadraticVoting {
         }
 
         // Transferir el presupuesto no gastado al propietario del contrato
-        payable(owner).transfer(totalBudget);
+        // AVOIDING UPDATES SOLUTION
+        uint256 remainingBudget = totalBudget;
         totalBudget = 0;
-
-        // uint256 remainingBudget = address(this).balance;
-        // if (remainingBudget > 0) {
-        //     payable(owner).transfer(remainingBudget);
-        // }
+        payable(owner).transfer(remainingBudget);
     }
 }
