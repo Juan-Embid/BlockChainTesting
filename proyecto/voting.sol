@@ -134,6 +134,7 @@ contract QuadraticVoting {
             !registeredParticipants[msg.sender],
             "Participant already registered"
         );
+        require(msg.value >= tokenPrice, "Insufficient funds to buy tokens");
         // AVOIDING UPDATES SOLUTION
         registeredParticipants[msg.sender] = true;
         uint256 tokensToMint = msg.value;
@@ -285,6 +286,7 @@ contract QuadraticVoting {
         uint256 costForNewVotes = (newTotalVotes * newTotalVotes) -
             (currentVotes * currentVotes);
 
+        require(costForNewVotes > 0, "Invalid number of votes"); // comprobamos que no pueda ser negativo
         require(
             votingToken.balanceOf(msg.sender) >= costForNewVotes,
             "Insufficient tokens for voting"
@@ -328,6 +330,7 @@ contract QuadraticVoting {
         uint256 tokenWithdrawMoney = (currentVotes * currentVotes) -
             (numVotes * numVotes);
 
+        require(tokenWithdrawMoney > 0, "Invalid number of votes to withdraw"); // comprobamos que no sea negativo
         // AVOIDING UPDATES SOLUTION
         proposal.votesByParticipant[msg.sender] = currentVotes - numVotes; // actualizamos el estado
         votingToken.transfer(msg.sender, tokenWithdrawMoney); // llamada externa
@@ -357,7 +360,11 @@ contract QuadraticVoting {
                 totalVotes += votes;
             }
             // AVOIDING UPDATES SOLUTION
+            require(totalBudget >= budget, "Budget exceeds the limit. Totalbudget could be negative.");
             totalBudget -= budget; // total budget se reduce en el presupuesto de la propuesta
+
+            uint256 tokensToBurn = proposal.budget; // sacamos los tokens de la propuesta
+            votingToken.deleteTokens(address(this), tokensToBurn); // hacemos burn de los tokens
 
             try
                 IExecutableProposal(proposal.executor).executeProposal{
@@ -367,6 +374,7 @@ contract QuadraticVoting {
             {
                 proposal.approved = true;
                 proposal.executed = true;
+                proposal.budget = 0;
                 emit ProposalExecutionSucceeded(proposalId);
             } catch {
                 emit ProposalExecutionFailed(proposalId);
