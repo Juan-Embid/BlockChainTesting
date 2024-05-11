@@ -137,7 +137,7 @@ contract QuadraticVoting {
             !registeredParticipants[msg.sender],
             "Participant already registered"
         );
-        require(msg.value >= tokenPrice, "Insufficient funds to buy tokens");
+        require(msg.value >= tokenPrice, "Insufficient funds to add participant");
         // AVOIDING UPDATES SOLUTION
         registeredParticipants[msg.sender] = true;
         uint256 tokensToMint = msg.value;
