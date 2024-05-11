@@ -408,7 +408,7 @@ contract QuadraticVoting {
                     if (gasleft() < 100000) {
                         lastProcessedProposal = i;
                         lastProcessedVoter = j;
-                        return;
+                        return; // Podriamos haberlo hecho con un while y nos ahorrabamos el return
                     }
                 }
 
@@ -426,7 +426,7 @@ contract QuadraticVoting {
             // comprobar si queda suficiente gas
             if (gasleft() < 100000) {
                 lastProcessedProposal = i;
-                return;
+                return; // Podriamos haberlo hecho con un while y nos ahorrabamos el return
             }
         }
 
