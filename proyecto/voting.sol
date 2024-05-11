@@ -59,6 +59,9 @@ contract QuadraticVoting {
     event ProposalExecutionSucceeded(uint256 proposalId);
     event ProposalExecutionFailed(uint256 proposalId);
 
+    uint256 public lastProcessedProposal;
+    uint256 public lastProcessedVoter;
+
     struct Proposal {
         string title;
         string description;
@@ -388,18 +391,27 @@ contract QuadraticVoting {
         votingOpen = false;
 
         // Procesar cada propuesta al cerrar la votación
-        for (uint256 i = 0; i < proposalCount; i++) {
+        for (uint256 i = lastProcessedProposal; i < proposalCount; i++) {
             Proposal storage proposal = proposals[i];
             if (!proposal.approved) {
                 // Devolver tokens a los votantes de propuestas no aprobadas
-                for (uint256 j = 0; j < proposal.voters.length; j++) {
+                for (uint256 j = lastProcessedVoter; j < proposal.voters.length; j++) {
                     address voter = proposal.voters[j];
                     uint256 votes = proposal.votesByParticipant[voter];
                     uint256 tokensToReturn = votes * votes; // Devolución cuadrática
                     votingToken.transfer(voter, tokensToReturn);
                     // AVOIDING UPDATES SOLUTION
-                    proposal.votesByParticipant[voter] = 0; 
+                    proposal.votesByParticipant[voter] = 0;
+
+                    // comprobar si queda suficiente gas
+                    if (gasleft() < 100000) {
+                        lastProcessedProposal = i;
+                        lastProcessedVoter = j;
+                        return;
+                    }
                 }
+
+                lastProcessedVoter = 0; // Reiniciar el contador de votantes cuando acaba el bucle
             } else {
                 // Asegurarse de que las propuestas aprobadas se ejecuten
                 if (!proposal.executed) {
@@ -409,7 +421,15 @@ contract QuadraticVoting {
 
             // Limpiar datos de votantes para liberar espacio en storage y evitar reentrancy issues
             delete proposal.voters;
+
+            // comprobar si queda suficiente gas
+            if (gasleft() < 100000) {
+                lastProcessedProposal = i;
+                return;
+            }
         }
+
+        lastProcessedProposal = 0; // Reiniciar el contador de propuestas cuando acaba el bucle
 
         // Transferir el presupuesto no gastado al propietario del contrato
         // AVOIDING UPDATES SOLUTION
