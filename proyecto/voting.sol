@@ -430,7 +430,7 @@ contract QuadraticVoting {
                     proposal.votesByParticipant[voter] = 0;
 
                     // comprobar si queda suficiente gas
-                    if (gasleft() < 100000) {
+                    if (gasleft() < 200000) {
                         lastProcessedProposal = i;
                         lastProcessedVoter = j;
                         return; // Podriamos haberlo hecho con un while y nos ahorrabamos el return
@@ -449,7 +449,7 @@ contract QuadraticVoting {
             delete proposal.voters;
 
             // comprobar si queda suficiente gas
-            if (gasleft() < 100000) {
+            if (gasleft() < 200000) {
                 lastProcessedProposal = i;
                 return; // Podriamos haberlo hecho con un while y nos ahorrabamos el return
             }
