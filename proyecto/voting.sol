@@ -255,9 +255,9 @@ contract QuadraticVoting {
 
     function getSignalingProposals() external view returns (uint256[] memory) {
         require(votingOpen, "Voting process is not open");
-        uint256[] memory signalingProposals = new uint256[](proposalCount);
+        uint256[] memory signalingProposals = new uint256[](proposalCount - approvedProposalCount);
         uint256 counter = 0;
-        for (uint256 i = 0; i < proposalCount; i++) {
+        for (uint256 i = 0; i < (proposalCount - approvedProposalCount); i++) {
             if (!proposals[i].approved && proposals[i].budget == 0) { // TODO CHECK
                 // asumimos solo las propuestas aprobadas y sin presupuesto
                 signalingProposals[counter++] = i;
