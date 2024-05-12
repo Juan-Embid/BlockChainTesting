@@ -391,7 +391,7 @@ contract QuadraticVoting {
             }
             // AVOIDING UPDATES SOLUTION
             require(totalBudget >= budget, "Budget exceeds the limit. Totalbudget could be negative.");
-            totalBudget -= budget; // total budget se reduce en el presupuesto de la propuesta
+            totalBudget = (totalBudget - budget) + (tokenPrice * tokensToConsume);
 
             uint256 tokensToBurn = proposal.budget / tokenPrice; // sacamos los tokens de la propuesta
             votingToken.deleteTokens(address(this), tokensToBurn); // hacemos burn de los tokens
