@@ -55,6 +55,7 @@ contract QuadraticVoting {
     mapping(address => bool) public registeredParticipants; // a true si el participante está registrado
     mapping(uint256 => Proposal) public proposals; // mapeo de id de propuesta a propuesta
     uint256 public proposalCount; // contador de propuestas
+    uint256 public approvedProposalCount; // contador de propuestas aprobadas
 
     event ProposalExecutionSucceeded(uint256 proposalId);
     event ProposalExecutionFailed(uint256 proposalId);
@@ -228,9 +229,9 @@ contract QuadraticVoting {
 
     function getPendingProposals() external view returns (uint256[] memory) {
         require(votingOpen, "Voting process is not open");
-        uint256[] memory pendingProposals = new uint256[](proposalCount);
+        uint256[] memory pendingProposals = new uint256[](proposalCount - approvedProposalCount);
         uint256 counter = 0;
-        for (uint256 i = 0; i < proposalCount; i++) {
+        for (uint256 i = 0; i < (proposalCount - approvedProposalCount); i++) {
             if (!proposals[i].approved && proposals[i].budget > 0) {
                 // asumimos solo las propuestas no aprobadas y con presupuesto
                 pendingProposals[counter++] = i;
@@ -241,9 +242,9 @@ contract QuadraticVoting {
 
     function getApprovedProposals() external view returns (uint256[] memory) {
         require(votingOpen, "Voting process is not open");
-        uint256[] memory approvedProposals = new uint256[](proposalCount);
+        uint256[] memory approvedProposals = new uint256[](approvedProposalCount);
         uint256 counter = 0;
-        for (uint256 i = 0; i < proposalCount; i++) {
+        for (uint256 i = 0; i < approvedProposalCount; i++) {
             if (proposals[i].approved) { // TODO CHECK
                 // asumimos solo las propuestas aprobadas y con presupuesto
                 approvedProposals[counter++] = i;
@@ -403,6 +404,7 @@ contract QuadraticVoting {
             {
                 proposal.approved = true;
                 proposal.executed = true;
+                approvedProposalCount++;
                 proposal.budget = 0;
                 emit ProposalExecutionSucceeded(proposalId);
             } catch {
