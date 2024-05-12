@@ -127,6 +127,7 @@ contract QuadraticVoting {
     // Abre voting y solo puede ser ejecutado por el creado del contrato, se le pasa el presupuesto inicial (luego modificado)
     function openVoting() external payable onlyOwner {
         require(!votingOpen, "Voting is already open");
+        require(msg.value > 0, "Initial budget must be greater than 0");
         totalBudget = msg.value;
         votingOpen = true;
     }
@@ -141,7 +142,7 @@ contract QuadraticVoting {
         require(msg.value >= tokenPrice, "Insufficient funds to add participant");
         // AVOIDING UPDATES SOLUTION
         registeredParticipants[msg.sender] = true;
-        uint256 tokensToMint = msg.value;
+        uint256 tokensToMint = msg.value / tokenPrice;
         votingToken.newTokens(msg.sender, tokensToMint);
     }
 
@@ -215,6 +216,10 @@ contract QuadraticVoting {
             votingToken.balanceOf(msg.sender) >= tokenAmount,
             "Insufficient token balance"
         );
+        require(
+            registeredParticipants[msg.sender],
+            "Only registered participants can sell tokens"
+        );
         uint256 etherToReturn = tokenAmount * tokenPrice;
         // AVOIDING UPDATES SOLUTION
         votingToken.deleteTokens(msg.sender, tokenAmount); // eliminamos tokens
@@ -239,7 +244,7 @@ contract QuadraticVoting {
         uint256[] memory approvedProposals = new uint256[](proposalCount);
         uint256 counter = 0;
         for (uint256 i = 0; i < proposalCount; i++) {
-            if (proposals[i].approved && proposals[i].budget > 0) {
+            if (proposals[i].approved) { // TODO CHECK
                 // asumimos solo las propuestas aprobadas y con presupuesto
                 approvedProposals[counter++] = i;
             }
@@ -252,7 +257,7 @@ contract QuadraticVoting {
         uint256[] memory signalingProposals = new uint256[](proposalCount);
         uint256 counter = 0;
         for (uint256 i = 0; i < proposalCount; i++) {
-            if (proposals[i].approved && proposals[i].budget == 0) {
+            if (!proposals[i].approved && proposals[i].budget == 0) { // TODO CHECK
                 // asumimos solo las propuestas aprobadas y sin presupuesto
                 signalingProposals[counter++] = i;
             }
@@ -260,11 +265,31 @@ contract QuadraticVoting {
         return signalingProposals;
     }
 
-    // function getProposalInfo(uint256 proposalId) external view returns (string memory title, string memory description, uint256 budget, address executor, bool approved, mapping(address => uint256) memory votesByParticipant, address[] memory voters) {
-    //   require(votingOpen, "Voting process is not open");
-    //   Proposal storage proposal = proposals[proposalId];
-    //   return (proposal.title, proposal.description, proposal.budget, proposal.executor, proposal.approved, proposal.votesByParticipant, proposal.voters);
-    // }
+    function getProposalInfo(uint256 proposalId)
+        external
+        view
+        returns (
+            string memory,
+            string memory,
+            uint256,
+            address,
+            uint256,
+            bool,
+            bool
+        )
+    {
+        Proposal storage proposal = proposals[proposalId];
+        return (
+            proposal.title,
+            proposal.description,
+            proposal.budget,
+            proposal.executor,
+            proposal.threshold,
+            proposal.approved,
+            proposal.executed
+        );
+    }
+
     function getProposalVoteByParticipant(
         uint256 proposalId,
         address participant
