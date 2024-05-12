@@ -393,14 +393,14 @@ contract QuadraticVoting {
             require(totalBudget >= budget, "Budget exceeds the limit. Totalbudget could be negative.");
             totalBudget -= budget; // total budget se reduce en el presupuesto de la propuesta
 
-            uint256 tokensToBurn = proposal.budget; // sacamos los tokens de la propuesta
+            uint256 tokensToBurn = proposal.budget / tokenPrice; // sacamos los tokens de la propuesta
             votingToken.deleteTokens(address(this), tokensToBurn); // hacemos burn de los tokens
 
             try
                 IExecutableProposal(proposal.executor).executeProposal{
                     value: budget,
                     gas: 100000
-                }(proposalId, totalVotes, budget)
+                }(proposalId, totalVotes, budget / tokenPrice)
             {
                 proposal.approved = true;
                 proposal.executed = true;
